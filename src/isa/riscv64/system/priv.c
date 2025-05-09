@@ -202,7 +202,7 @@ void init_pma() {
     {0},
     {0},
   };
-  
+
   PMAConfigModule* pmaconfigs = (PMAConfigModule *)malloc(sizeof (PMAConfigModule));
   for (int i = 0; i < CONFIG_RV_PMA_ACTIVE_NUM; i++) {
     pmaconfigs->pmaconfigs[i].base_addr = pmaConfigInit[CONFIG_RV_PMA_ACTIVE_NUM - 1 - i][0];
@@ -661,11 +661,34 @@ static inline word_t* csr_decode(uint32_t addr) {
 
 #define SCOUNTOVF_WMASK 0xfffffff8ULL
 
-// Smcsrind/Sscsrind is not implemented. bit 60(CSRIND) read-only 1.
-#define STATEEN0_CSRIND  0x1000000000000000ULL
-#define MSTATEEN0_WMASK  0xdc00000000000001ULL
-#define HSTATEEN0_WMASK  0xdc00000000000001ULL
-#define SSTATEEN0_WMASK  0x0000000000000001ULL // 32 bits
+#define MSTATEEN0_IMSIC 0x0400000000000000
+#define MSTATEEN0_WMASK (                           \
+  MSTATEEN_HSTATEEN                               | \
+  MSTATEEN0_HENVCFG                               | \
+  MUXDEF(CONFIG_RV_SMCSRIND, MSTATEEN0_CSRIND, 0) | \
+  MUXDEF(CONFIG_RV_AIA, MSTATEEN0_AIA, 0)         | \
+  MUXDEF(CONFIG_RV_IMSIC, MSTATEEN0_IMSIC, 0)     | \
+  MSTATEEN0_CS                                      \
+)
+#define HSTATEEN0_WMASK MSTATEEN0_WMASK
+#define SSTATEEN0_WMASK SSTATEEN0_CS
+
+#define MSTATEENX_WMASK MSTATEEN_HSTATEEN
+#define HSTATEENX_WMASK MSTATEENX_WMASK
+#define SSTATEENX_WMASK 0x0
+
+#ifdef CONFIG_RV_SMSTATEEN
+void init_smstateen() {
+  mstateen0->val = 0;
+  mstateen1->val = 0;
+  mstateen2->val = 0;
+  mstateen3->val = 0;
+#if defined(CONFIG_RV_AIA) && !defined(CONFIG_RV_SMCSRIND)
+  mstateen0->val |= MSTATEEN0_CSRIND;
+  IFDEF(CONFIG_RVH, hstateen0->val |= MSTATEEN0_CSRIND);
+#endif
+}
+#endif // CONFIG_RV_SMSTATEEN
 
 #define MHPMEVENT_WMASK_OF      (0x1UL   << 63)
 #define MHPMEVENT_WMASK_MINH    (0x1UL   << 62)
@@ -1428,43 +1451,78 @@ inline void update_vstopi() {
   uint8_t vs_iid_num = interrupt_default_prio[vs_iid_idx];
   uint8_t vs_prio_num = cpu.VSIpriosSort->ipriosEnable[vs_iid_idx].priority;
 
-  uint8_t iid_candidate123 = IRQ_SEIP;
-  uint8_t iid_candidate45 = 0;
-  uint16_t iprio_candidate123 = 0;
-  uint16_t iprio_candidate45 = 0;
-
-  if (candidate1) {
-    vstopei_t* vstopei_tmp = (vstopei_t*)cpu.fromaia.vstopei;
-    iprio_candidate123 = vstopei_tmp->iprio;
-  } else if (candidate2) {
-    iprio_candidate123 = hvictl->iprio;
-  } else if (candidate3) {
-    iprio_candidate123 = 256;
-  }
-
-  if (candidate4) {
-    iid_candidate45 = vs_iid_num;
-    iprio_candidate45 = vs_prio_num;
-  } else if (candidate5) {
-    iid_candidate45 = hvictl->iid;
-    iprio_candidate45 = hvictl->iprio;
-  }
-
   bool candidate123 = candidate1 || candidate2 || candidate3;
   bool candidate45 = candidate4 || candidate5;
-  bool candidate123_high_candidate45 = false;
-  bool candidate123_low_candidate45 = false;
 
-  if (candidate123 && candidate4) {
-    candidate123_high_candidate45 = (iprio_candidate123 < iprio_candidate45) || ((iprio_candidate123 == iprio_candidate45) && (get_prio_idx_in_group(iid_candidate123) <= get_prio_idx_in_group(iid_candidate45)));
-    candidate123_low_candidate45  = (iprio_candidate123 > iprio_candidate45) || ((iprio_candidate123 == iprio_candidate45) && (get_prio_idx_in_group(iid_candidate123) > get_prio_idx_in_group(iid_candidate45)));
-  } else if (candidate123 && candidate5) {
-    candidate123_high_candidate45 = (iprio_candidate123 < iprio_candidate45) || ((iprio_candidate123 == iprio_candidate45) && hvictl->dpr);
-    candidate123_low_candidate45  = (iprio_candidate123 > iprio_candidate45) || ((iprio_candidate123 == iprio_candidate45) && !hvictl->dpr);
-  } else if (candidate123 && !candidate45) {
-    candidate123_high_candidate45 = true;
-  } else if (!candidate123 && candidate45) {
-    candidate123_low_candidate45 = true;
+  bool onlyC1Enable = candidate1 & !candidate45;
+  bool onlyC2Enable = candidate2 & !candidate45;
+  bool onlyC3Enable = candidate3 & !candidate45;
+  bool onlyC4Enable = candidate4 & !candidate123;
+  bool onlyC5Enable = candidate5 & !candidate123;
+  bool C1C4Enable = candidate1 & candidate4;
+  bool C1C5Enable = candidate1 & candidate5;
+  bool C2C4Enable = candidate2 & candidate4;
+  bool C3C4Enable = candidate3 & candidate4;
+  bool C3C5Enable = candidate3 & candidate5;
+
+  uint16_t iidOnlyC1 = IRQ_SEIP;
+  uint16_t iidOnlyC4 = vs_iid_num;
+  uint16_t iidOnlyC5 = hvictl->iid;
+
+  uint8_t hvictlDPR = hvictl->dpr ? 0xff : 0;
+
+  vstopei_t vstopei_tmp = (vstopei_t)cpu.fromaia.vstopei;
+  bool C1GreaterThan255 = vstopei_tmp.iprio > 0xff;
+  bool C4IsZero = vs_prio_num == 0;
+  bool C2C5IsZero = hvictl->iprio == 0;
+  bool C4HighVSEI = vs_iid_idx < get_prio_idx_in_group(IRQ_VSEIP);
+  bool SEIHighC4 = get_prio_idx_in_group(IRQ_SEIP) < vs_iid_idx;
+
+  uint16_t iprioC1 = vstopei_tmp.iprio;
+  uint16_t iprioC2C5 = hvictl->iprio;
+  uint16_t iprioC4 = vs_prio_num;
+
+  uint8_t iprioC1Tmp = iprioC1 & 0xff;
+  uint8_t iprioC4Tmp = C4IsZero ? C4HighVSEI ? 0 : 0xff : iprioC4;
+  uint8_t iprioC3C5Tmp = C2C5IsZero ? hvictlDPR : iprioC2C5;
+
+  uint8_t iprioC1GreaterThan255 = C1GreaterThan255 ? 0xff : iprioC1Tmp;
+
+  uint8_t iprioOnlyC1 = iprioC1GreaterThan255;
+  uint8_t iprioOnlyC2 = iprioC2C5;
+  uint8_t iprioOnlyC3 = 0xff;
+  uint8_t iprioOnlyC4 = iprioC4Tmp;
+  uint8_t iprioOnlyC5 = iprioC3C5Tmp;
+
+  uint16_t iidC1C4 = 0;
+  uint8_t iprioC1C4 = 0;
+  if (C4IsZero) {
+    iidC1C4 = C4HighVSEI ? iidOnlyC4 : iidOnlyC1;
+    iprioC1C4 = C4HighVSEI ? 0 : iprioC1GreaterThan255;
+  } else if (iprioC1 < iprioC4) {
+    iidC1C4 = iidOnlyC1;
+    iprioC1C4 = iprioC1Tmp;
+  } else if (iprioC1 == iprioC4) {
+    iidC1C4 = SEIHighC4 ? iidOnlyC1 : iidOnlyC4;
+    iprioC1C4 = SEIHighC4 ? iprioC1Tmp : iprioC4;
+  } else {
+    iidC1C4 = iidOnlyC4;
+    iprioC1C4 = iprioC4;
+  }
+
+  uint16_t iidC1C5 = 0;
+  uint8_t iprioC1C5 = 0;
+  iidC1C5 = hvictl->dpr ? iidOnlyC1 : iidOnlyC5;
+  if (C2C5IsZero) {
+    iprioC1C5 = hvictl->dpr ? iprioC1GreaterThan255 : 0;
+  } else if (iprioC1 < iprioC2C5) {
+    iidC1C5 = iidOnlyC1;
+    iprioC1C5 = iprioC1Tmp;
+  } else if (iprioC1 == iprioC2C5) {
+    iprioC1C5 = hvictl->dpr ? iprioC1Tmp : iprioC2C5;
+  } else {
+    iidC1C5 = iidOnlyC5;
+    iprioC1C5 = iprioC3C5Tmp;
   }
 
   uint8_t iid_candidate = 0;
@@ -1539,9 +1597,16 @@ static word_t csr_read(uint32_t csrid) {
     case CSR_SSTATUS: return sstatus_read(false, false);
 
 #ifdef CONFIG_RV_SMSTATEEN
-    case CSR_SSTATEEN0:
-      IFDEF(CONFIG_RVH, if (cpu.v) return sstateen0->val & hstateen0->val & mstateen0->val);
-      return sstateen0->val & mstateen0->val;
+    case CSR_SSTATEEN0 ... CSR_SSTATEEN3:
+    {
+      mstateen1_t *mstateenx = (mstateen1_t *)&csr_array[CSR_MSTATEEN0 + (csrid - CSR_SSTATEEN0)];
+      sstateen1_t *sstateenx = (sstateen1_t *)&csr_array[CSR_SSTATEEN0 + (csrid - CSR_SSTATEEN0)];
+#ifdef CONFIG_RVH
+      hstateen1_t *hstateenx = (hstateen1_t *)&csr_array[CSR_HSTATEEN0 + (csrid - CSR_SSTATEEN0)];
+      if (cpu.v) return sstateenx->val & hstateenx->val & mstateenx->val;
+#endif // CONFIG_RVH
+      return sstateenx->val & mstateenx->val;
+    }
 #endif // CONFIG_RV_SMSTATEEN
 
     case CSR_SIE:
@@ -1573,7 +1638,7 @@ static word_t csr_read(uint32_t csrid) {
 #endif // CONFIG_RV_SSTC
 #ifdef CONFIG_RV_SSCOFPMF
     case CSR_SCOUNTOVF:
-      if (cpu.mode == MODE_M) return scountovf->val; 
+      if (cpu.mode == MODE_M) return scountovf->val;
       IFDEF(CONFIG_RVH, else if (cpu.v && cpu.mode == MODE_S) return (mcounteren->val & hcounteren->val & scountovf->val));
       else if (cpu.mode == MODE_S) return (mcounteren->val & scountovf->val);
 #endif // CONFIG_RV_SSCOFPMF
@@ -1622,7 +1687,12 @@ static word_t csr_read(uint32_t csrid) {
     }
 
 #ifdef CONFIG_RV_SMSTATEEN
-    case CSR_HSTATEEN0: return hstateen0->val & mstateen0->val;
+    case CSR_HSTATEEN0 ... CSR_HSTATEEN3:
+    {
+      mstateen1_t *mstateenx = (mstateen1_t *)&csr_array[CSR_MSTATEEN0 + (csrid - CSR_HSTATEEN0)];
+      hstateen1_t *hstateenx = (hstateen1_t *)&csr_array[CSR_HSTATEEN0 + (csrid - CSR_HSTATEEN0)];
+      return hstateenx->val & mstateenx->val;
+    }
 #endif // CONFIG_RV_SMSTATEEN
 
     case CSR_HIP: return get_hip();
@@ -1870,7 +1940,9 @@ static void csr_write(uint32_t csrid, word_t src) {
       break;
 
 #ifdef CONFIG_RV_SMSTATEEN
-    case CSR_SSTATEEN0: *dest = (src & SSTATEEN0_WMASK); break;
+    case CSR_SSTATEEN0: *dest = src & SSTATEEN0_WMASK; break;
+    case CSR_SSTATEEN1 ... CSR_SSTATEEN3: *dest = src & SSTATEENX_WMASK; break;
+
 #endif // CONFIG_RV_SMSTATEEN
 
     case CSR_SIE:
@@ -2032,10 +2104,8 @@ static void csr_write(uint32_t csrid, word_t src) {
       break;
 
 #ifdef CONFIG_RV_SMSTATEEN
-    case CSR_HSTATEEN0:
-    {
-      *dest = ((src & HSTATEEN0_WMASK) | STATEEN0_CSRIND); break;
-    }
+    case CSR_HSTATEEN0: *dest = src & HSTATEEN0_WMASK; break;
+    case CSR_HSTATEEN1 ... CSR_HSTATEEN3: *dest = src & HSTATEENX_WMASK; break;
 #endif // CONFIG_RV_SMSTATEEN
 
     case CSR_HGATP:
@@ -2150,7 +2220,8 @@ static void csr_write(uint32_t csrid, word_t src) {
       break;
 
 #ifdef CONFIG_RV_SMSTATEEN
-    case CSR_MSTATEEN0: *dest = ((src & MSTATEEN0_WMASK) | STATEEN0_CSRIND); break;
+    case CSR_MSTATEEN0: *dest = src & MSTATEEN0_WMASK; break;
+    case CSR_MSTATEEN1 ... CSR_MSTATEEN3: *dest = src & MSTATEENX_WMASK; break;
 #endif // CONFIG_RV_SMSTATEEN
 
 #ifdef CONFIG_RV_CSR_MCOUNTINHIBIT
@@ -2180,7 +2251,7 @@ static void csr_write(uint32_t csrid, word_t src) {
       }
 #ifdef CONFIG_RV_SSCOFPMF
       scountovf->ofvec = (scountovf->ofvec & ~(1 << (csrid - CSR_MHPMEVENT_BASE))) | (new_val.of << (csrid - CSR_MHPMEVENT_BASE));
-#endif // CONFIG_RV_SSCOFPMF 
+#endif // CONFIG_RV_SSCOFPMF
       break;
     }
 
@@ -2275,7 +2346,7 @@ static void csr_write(uint32_t csrid, word_t src) {
         if (idx_base + i >= CONFIG_RV_PMA_ACTIVE_NUM) {
           break;
         }
-        word_t oldCfg = pmacfg_from_index(idx_base + i);    
+        word_t oldCfg = pmacfg_from_index(idx_base + i);
         word_t cfg = ((src >> (i*8)) & 0xff);
         if ((oldCfg & PMA_L) == 0) {
           cfg &= ~PMA_W | ((cfg & PMA_R) ? PMA_W : 0);
@@ -2519,13 +2590,18 @@ static inline bool smstateen_extension_permit_check(const uint32_t addr) {
   bool has_vi = false;
 
   // SE0 bit 63
-  if (is_access(sstateen0)) {
-    if ((cpu.mode < MODE_M) && (!mstateen0->se0)) { longjmp_exception(EX_II); }
-    IFDEF(CONFIG_RVH, else if (cpu.v && !hstateen0->se0) { has_vi = true; })
+  if (is_access(sstateen0) || is_access(sstateen1) || is_access(sstateen2) || is_access(sstateen3)) {
+    mstateen1_t *mstateenx = (mstateen1_t *)&csr_array[CSR_MSTATEEN0 + (addr - CSR_SSTATEEN0)];
+#ifdef CONFIG_RVH
+    hstateen1_t *hstateenx = (hstateen1_t *)&csr_array[CSR_HSTATEEN0 + (addr - CSR_SSTATEEN0)];
+#endif // CONFIG_RVH
+    if ((cpu.mode < MODE_M) && (!mstateenx->se)) { longjmp_exception(EX_II); }
+    IFDEF(CONFIG_RVH, else if (cpu.v && !hstateenx->se) { has_vi = true; })
   }
 #ifdef CONFIG_RVH
-  else if (is_access(hstateen0)) {
-    if ((cpu.mode < MODE_M) && (!mstateen0->se0)) { longjmp_exception(EX_II); }
+  else if (is_access(hstateen0) || is_access(hstateen1) || is_access(hstateen2) || is_access(hstateen3)) {
+    mstateen1_t *mstateenx = (mstateen1_t *)&csr_array[CSR_MSTATEEN0 + (addr - CSR_HSTATEEN0)];
+    if ((cpu.mode < MODE_M) && (!mstateenx->se)) { longjmp_exception(EX_II); }
   }
 #endif // CONFIG_RVH
 
@@ -2539,6 +2615,22 @@ static inline bool smstateen_extension_permit_check(const uint32_t addr) {
     if ((cpu.mode < MODE_M) && (!mstateen0->envcfg)) { longjmp_exception(EX_II); }
   }
 #endif // CONFIG_RVH
+
+#if defined (CONFIG_RV_SMCSRIND) || defined (CONFIG_RV_AIA)
+  // CSRIND bit 60
+  else if (addr >= CSR_SISELECT && addr <= CSR_SIREG6) {
+    // siph is also within this range, but if the accessed CSR is miph,
+    // it will directly raise an illegal instruction exception
+    // during the earlier check for the existence of the CSR.
+    if ((cpu.mode < MODE_M) && (!mstateen0->csrind)) { longjmp_exception(EX_II); }
+    IFDEF(CONFIG_RVH, else if (cpu.v && !hstateen0->csrind) { has_vi = true; })
+  }
+#ifdef CONFIG_RVH
+  else if (addr >= CSR_VSISELECT && addr <= CSR_VSIREG6) {
+    if ((cpu.mode < MODE_M) && (!mstateen0->csrind)) { longjmp_exception(EX_II); }
+  }
+#endif // CONFIG_RVH
+#endif // CONFIG_RV_SMCSRIND || CONFIG_RV_AIA
 
 #ifdef CONFIG_RV_AIA
   // AIA bit 59
@@ -2688,7 +2780,7 @@ static inline bool csrind_permit_check(const word_t *dest_access) {
       else if (siselect->val <= ISELECT_MAX_MASK) {
 #ifdef CONFIG_RV_IMSIC
         if (
-          ((cpu.mode == MODE_S) && mvien->seie) || 
+          ((cpu.mode == MODE_S) && mvien->seie) ||
           (siselect->val > ISELECT_7F_MASK && (siselect->val & 0x1))
         ) longjmp_exception(EX_II);
 #else
