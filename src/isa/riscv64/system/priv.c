@@ -617,7 +617,8 @@ static inline word_t* csr_decode(uint32_t addr) {
                         (1 << EX_SWC) | \
                         (1 << EX_HWE))
 
-#define MEDELEG_MASK MUXDEF(CONFIG_RVH,  MEDELEG_RVH, MEDELEG_NONRVH)
+// #define MEDELEG_MASK MUXDEF(CONFIG_RVH,  MEDELEG_RVH, MEDELEG_NONRVH)
+#define MEDELEG_MASK MEDELEG_NONRVH
 
 
 #define MIDELEG_WMASK_SSI (1 << 1)
