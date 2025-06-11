@@ -391,7 +391,8 @@ static inline word_t* csr_decode(uint32_t addr) {
 
 // rvh fields of mstatus
 #if defined(CONFIG_RVH)
-#define MSTATUS_WMASK_RVH (3UL << 38)
+// #define MSTATUS_WMASK_RVH (3UL << 38)
+#define MSTATUS_WMASK_RVH 0
 #else
 #define MSTATUS_WMASK_RVH 0
 #endif
@@ -633,8 +634,10 @@ static inline word_t* csr_decode(uint32_t addr) {
 #define MIE_MASK_BASE 0xaaa
 #define MIP_MASK_BASE (1 << 1)
 #ifdef CONFIG_RVH
-#define MIE_MASK_H ((1 << 2) | (1 << 6) | (1 << 10) | (1 << 12))
-#define MIP_MASK_H MIP_VSSIP
+// #define MIE_MASK_H ((1 << 2) | (1 << 6) | (1 << 10) | (1 << 12))
+// #define MIP_MASK_H MIP_VSSIP
+#define MIE_MASK_H 0
+#define MIP_MASK_H 0
 #else
 #define MIE_MASK_H 0
 #define MIP_MASK_H 0
