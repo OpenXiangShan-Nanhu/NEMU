@@ -614,9 +614,9 @@ static inline word_t* csr_decode(uint32_t addr) {
                         (1 << EX_ECS) | \
                         (1 << EX_IPF) | \
                         (1 << EX_LPF) | \
-                        (1 << EX_SPF) | \
-                        (1 << EX_SWC) | \
-                        (1 << EX_HWE))
+                        (1 << EX_SPF))
+                        // (1 << EX_SWC) |
+                        // (1 << EX_HWE))
 
 // #define MEDELEG_MASK MUXDEF(CONFIG_RVH,  MEDELEG_RVH, MEDELEG_NONRVH)
 #define MEDELEG_MASK MEDELEG_NONRVH
@@ -2099,7 +2099,7 @@ static void csr_write(uint32_t csrid, word_t src) {
 
     case CUSTOM_CSR_SBPCTL: *dest = src & CUSTOM_CSR_SBPCTL_WMASK; break;
     case CUSTOM_CSR_SPFCTL: *dest = src & CUSTOM_CSR_SPFCTL_WMASK; break;
-    case CUSTOM_CSR_SLVPREDCTL: *dest = src & CUSTOM_CSR_SLVPREDCTL_WMASK; break;
+    // case CUSTOM_CSR_SLVPREDCTL: *dest = src & CUSTOM_CSR_SLVPREDCTL_WMASK; break;
     case CUSTOM_CSR_SMBLOCKCTL: *dest = src & CUSTOM_CSR_SMBLOCKCTL_WMASK; break;
     IFDEF(CONFIG_RV_SVINVAL, case CUSTOM_CSR_SRNCTL: *dest = src & CUSTOM_CSR_SRNCTL_WMASK; break;)
 
