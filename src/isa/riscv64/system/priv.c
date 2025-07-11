@@ -2695,7 +2695,7 @@ static inline bool smstateen_extension_permit_check(const uint32_t addr) {
     IFDEF(CONFIG_RVH, else if (cpu.v && !hstateenx->se) { has_vi = true; })
   }
 #ifdef CONFIG_RVH
-  else if (is_access(hstateen0) || is_access(hstateen1) || is_access(hstateen2) || is_access(hstateen3)) {
+  else if (is_access(hstateen0)) {
     mstateen1_t *mstateenx = (mstateen1_t *)&csr_array[CSR_MSTATEEN0 + (addr - CSR_HSTATEEN0)];
     if ((cpu.mode < MODE_M) && (!mstateenx->se)) { longjmp_exception(EX_II); }
   }

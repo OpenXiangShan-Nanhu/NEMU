@@ -282,8 +282,8 @@
   f(hstateen1 , 0x60D) f(hstateen2 , 0x60E) f(hstateen3 , 0x60F)
 
   #define CSRS_H_STATE_ENABLE(f) \
-  CSRS_H_STATE0_ENABLE(f) \
-  CSRS_H_STATEX_ENABLE(f) 
+  CSRS_H_STATE0_ENABLE(f)
+  // CSRS_H_STATEX_ENABLE(f) 
   #else
     #define CSRS_H_STATE_ENABLE(f)
   #endif // CONFIG_RV_SMSTATEEN
