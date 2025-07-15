@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+static int stip_priv = 0;
 int update_mmu_state();
 uint64_t get_htime();
 uint64_t get_mtime();
@@ -34,6 +35,7 @@ void fp_update_rm_cache(uint32_t rm);
 void vp_set_dirty();
 
 inline word_t get_mip();
+static void update_mip_withenvcfg(menvcfg_t* tmpcfg);
 inline word_t mstatus_read();
 inline word_t sstatus_read(bool vsreg_read, bool bare_read);
 
@@ -1106,6 +1108,19 @@ static inline word_t get_hie() {
 }
 #endif
 
+static void update_mip_withenvcfg(menvcfg_t* tmpcfg) {
+
+#ifdef CONFIG_SHARE
+#ifdef CONFIG_RV_SSTC
+  if (tmpcfg->stce) {
+    mip->stip = cpu.non_reg_interrupt_pending.platform_irp_stip;
+  } else {
+    mip->stip = stip_priv;
+  }
+}
+#endif
+#endif
+
 inline word_t get_mip() {
   word_t tmp = 0;
 
@@ -1121,6 +1136,7 @@ inline word_t get_mip() {
     tmp |= cpu.non_reg_interrupt_pending.platform_irp_stip << 5;
   } else {
     tmp |= mip->val & MIP_STIP;
+    stip_priv = mip->stip;
   }
 #else
   tmp |= mip->val & MIP_STIP;
@@ -2299,6 +2315,7 @@ static void csr_write(uint32_t csrid, word_t src) {
       if (((menvcfg_t*)&src)->pmm != 0b01) { // 0b01 is reserved
         menvcfg->val = mask_bitset(menvcfg->val, MENVCFG_WMASK_PMM, src);
       }
+      update_mip_withenvcfg((menvcfg_t*)&src);
       break;
 
     case CSR_MSECCFG:
