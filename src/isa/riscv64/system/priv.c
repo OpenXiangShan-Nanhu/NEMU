@@ -25,8 +25,9 @@
 #include <memory/paddr.h>
 #include <stdlib.h>
 #include <math.h>
-
+#ifdef CONFIG_SHARE
 static int stip_priv = 0;
+#endif
 int update_mmu_state();
 uint64_t get_htime();
 uint64_t get_mtime();
@@ -1117,9 +1118,9 @@ static void update_mip_withenvcfg(menvcfg_t* tmpcfg) {
   } else {
     mip->stip = stip_priv;
   }
+#endif
+#endif
 }
-#endif
-#endif
 
 inline word_t get_mip() {
   word_t tmp = 0;
