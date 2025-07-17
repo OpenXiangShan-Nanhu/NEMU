@@ -186,6 +186,7 @@ void init_custom_csr() {
 
 #ifdef CONFIG_RV_PMA_CSR
 void init_pma() {
+#ifdef CONFIG_FOR_V5
   unsigned long long pmaConfigInit[CONFIG_RV_PMA_ACTIVE_NUM][9] = {
     // base_addr,       range,             l, c, t, a, x, w, r
     {0,                0x1000000000000ULL, F, F, F, 3, F, F, F},
@@ -205,6 +206,28 @@ void init_pma() {
     {0},
     {0},
   };
+#else
+  unsigned long long pmaConfigInit[CONFIG_RV_PMA_ACTIVE_NUM][9] = {
+    // base_addr,       range,             l, c, t, a, x, w, r
+    {0x40000000000ULL, 0,                  F, F, F, 1, T, F, T},
+    {0x30000000000ULL, 0,                  F, F, F, 0, F, F, F},
+    {0x2000000000ULL,  0,                  F, T, F, 1, T, T, T},
+    {0x80000000ULL,    0,                  F, F, F, 1, T, T, T},
+    {0},
+    {0},
+    {0},
+    {0},
+    {0},
+    {0},
+    {0},
+    {0},
+    {0},
+    {0},
+    {0},
+    {0},
+  };
+#endif
+
 
   PMAConfigModule* pmaconfigs = (PMAConfigModule *)malloc(sizeof (PMAConfigModule));
   for (int i = 0; i < CONFIG_RV_PMA_ACTIVE_NUM; i++) {
