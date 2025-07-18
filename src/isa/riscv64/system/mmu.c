@@ -704,7 +704,8 @@ void isa_misalign_data_addr_check(vaddr_t vaddr, int len, int type) {
     if (ISDEF(CONFIG_AC_SOFT)) {
       int ex = cpu.amo || type == MEM_TYPE_WRITE ? EX_SAM : EX_LAM;
       cpu.trapInfo.tval = vaddr;
-      longjmp_exception(ex);
+      cpu.vaddrMisAlignException = ex;
+      // longjmp_exception(ex);
     }
   }
 }

@@ -27,6 +27,8 @@
 #include <memory/vaddr.h>
 #include <memory/host-tlb.h>
 #include <cpu/decode.h>
+#include <cpu/cpu.h>
+#include "../local-include/intr.h"
 
 void isa_mmio_misalign_data_addr_check(paddr_t paddr, vaddr_t vaddr, int len, int type, int is_cross_page);
 
@@ -44,6 +46,7 @@ static paddr_t vaddr_trans_and_check_exception(vaddr_t vaddr, int len, int type,
   return paddr;
 }
 
+__attribute__((unused))
 static word_t vaddr_read_cross_page(vaddr_t addr, int len, int type, bool needTranslate) {
   vaddr_t vaddr = addr;
   word_t data = 0;
@@ -67,6 +70,7 @@ static word_t vaddr_read_cross_page(vaddr_t addr, int len, int type, bool needTr
   return data;
 }
 
+__attribute__((unused))
 static void vaddr_write_cross_page(vaddr_t addr, int len, word_t data, bool needTranslate) {
   // (unaligned & cross page) store, align with dut(xs)
   //                  4KB|
@@ -117,6 +121,7 @@ static void vaddr_write_cross_page(vaddr_t addr, int len, word_t data, bool need
 
 __attribute__((noinline))
 static word_t vaddr_mmu_read(struct Decode *s, vaddr_t addr, int len, int type) {
+  Logti("vaddr_mmu_read: addr:0x%lx, len:%d, type:%d", addr, len, type);
   vaddr_t vaddr = addr;
   paddr_t pg_base = isa_mmu_translate(addr, len, type);
   int ret = pg_base & PAGE_MASK;
@@ -138,6 +143,8 @@ static word_t vaddr_mmu_read(struct Decode *s, vaddr_t addr, int len, int type) 
   return 0;
 }
 
+bool is_in_mmio(paddr_t addr);
+
 __attribute__((noinline))
 static void vaddr_mmu_write(struct Decode *s, vaddr_t addr, int len, word_t data) {
   vaddr_t vaddr = addr;
@@ -151,6 +158,15 @@ static void vaddr_mmu_write(struct Decode *s, vaddr_t addr, int len, word_t data
         vaddr, addr, len, data);
     }
 #endif // CONFIG_SHARE
+
+    if(is_in_mmio(addr) && cpu.vaddrMisAlignException == EX_SAM){
+      Logti("this is mmio paddr:" FMT_PADDR " vaddr:" FMT_WORD " len:%d type:%d pc:%lx cpu.vaddrMisAlignException : %d", addr, vaddr, len, MEM_TYPE_WRITE, cpu.pc, cpu.vaddrMisAlignException);
+      
+      longjmp_exception(EX_SAF);
+    }
+    if(cpu.vaddrMisAlignException != 0){
+      longjmp_exception(cpu.vaddrMisAlignException);
+    }
     paddr_write(addr, len, data, cpu.mode, vaddr);
   }
 }
@@ -170,6 +186,7 @@ static inline word_t vaddr_read_internal(void *s, vaddr_t addr, int len, int typ
 
   addr = get_effective_address(addr, type);
 
+  word_t res;
   bool is_cross_page = false;
   void isa_misalign_data_addr_check(vaddr_t vaddr, int len, int type);
   if (type != MEM_TYPE_IFETCH) {
@@ -181,16 +198,33 @@ static inline word_t vaddr_read_internal(void *s, vaddr_t addr, int len, int typ
     Logm("Checking mmu when MMU_DYN");
     mmu_mode = isa_mmu_check(addr, len, type);
   }
+  Logti("mmu_mode: %d", mmu_mode);
+  Logti("is_cross_page: %d", is_cross_page);
 
-  if (is_cross_page) {
-    return vaddr_read_cross_page(addr, len, type, mmu_mode == MMU_DYNAMIC || mmu_mode == MMU_TRANSLATE);
+  // if (is_cross_page) {
+  //   res = vaddr_read_cross_page(addr, len, type, mmu_mode == MMU_DYNAMIC || mmu_mode == MMU_TRANSLATE);
+  // }
+
+
+  if(cpu.vaddrMisAlignException == EX_LAM && type != MEM_TYPE_IFETCH && is_in_mmio(addr)) {
+    Logti("this is mmio paddr:" FMT_PADDR " vaddr:" FMT_WORD " len:%d type:%d pc:%lx", addr, addr, len, type, cpu.pc);
+    longjmp_exception(EX_LAF);
   }
+
+  if(cpu.vaddrMisAlignException != 0){
+    longjmp_exception(cpu.vaddrMisAlignException);
+  }
+
+
   if (mmu_mode == MMU_DIRECT) {
-    Logm("Paddr reading directly");
-    return paddr_read(addr, len, type, type, cpu.mode, addr);
+    Logti("Paddr reading directly");
+    res = paddr_read(addr, len, type, type, cpu.mode, addr);
+    return res;
   }
-  return MUXDEF(ENABLE_HOSTTLB, hosttlb_read, vaddr_mmu_read) ((struct Decode *)s, addr, len, type);
-  return 0;
+  res = MUXDEF(ENABLE_HOSTTLB, hosttlb_read, vaddr_mmu_read) ((struct Decode *)s, addr, len, type);
+
+  return res;
+  // return 0;
 
 }
 
@@ -256,11 +290,12 @@ void vaddr_write(struct Decode *s, vaddr_t addr, int len, word_t data, int mmu_m
     mmu_mode = isa_mmu_check(addr, len, MEM_TYPE_WRITE);
   }
 
-  if (is_cross_page) {
-    vaddr_write_cross_page(addr, len ,data, mmu_mode == MMU_DYNAMIC || mmu_mode == MMU_TRANSLATE);
-    return;
-  }
+  // if (is_cross_page) {
+  //   vaddr_write_cross_page(addr, len ,data, mmu_mode == MMU_DYNAMIC || mmu_mode == MMU_TRANSLATE);
+  //   return;
+  // }
   if (mmu_mode == MMU_DIRECT) {
+
     paddr_write(addr, len, data, cpu.mode, addr);
     return;
   }

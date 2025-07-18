@@ -212,6 +212,7 @@ typedef struct {
   uint64_t old_vstopi;
 #endif
 
+  int vaddrMisAlignException;
 } riscv64_CPU_state;
 
 // decode

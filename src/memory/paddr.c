@@ -164,6 +164,8 @@ void isa_mmio_misalign_data_addr_check(paddr_t paddr, vaddr_t vaddr, int len, in
     if (ISDEF(CONFIG_MMIO_AC_SOFT)) {
       int ex = cpu.amo || type == MEM_TYPE_WRITE ? EX_SAM : EX_LAM;
       cpu.trapInfo.tval = vaddr;
+      cpu.vaddrMisAlignException = ex;
+      Logm("raise exception %d for misaligned mmio access", ex);
       longjmp_exception(ex);
     }
   }
@@ -263,7 +265,7 @@ word_t paddr_read(paddr_t addr, int len, int type, int trap_type, int mode, vadd
   mode &= ~CROSS_PAGE_LD_FLAG;
 
   assert(type == MEM_TYPE_READ || type == MEM_TYPE_IFETCH_READ || type == MEM_TYPE_IFETCH || type == MEM_TYPE_WRITE_READ);
-  if (cpu.pbmt != 0) {
+  if (cpu.pbmt != PBMT_PMA || cpu.pbmt != PBMT_NC) {
     isa_mmio_misalign_data_addr_check(addr, vaddr, len, MEM_TYPE_READ, cross_page_load);
   }
 
@@ -412,7 +414,7 @@ void paddr_write(paddr_t addr, int len, word_t data, int mode, vaddr_t vaddr) {
   int cross_page_store = (mode & CROSS_PAGE_ST_FLAG) != 0;
   // get mode's original value
   mode = mode & ~CROSS_PAGE_ST_FLAG;
-  if (cpu.pbmt != 0) {
+  if (cpu.pbmt != PBMT_PMA || cpu.pbmt != PBMT_NC) {
     isa_mmio_misalign_data_addr_check(addr, vaddr, len, MEM_TYPE_WRITE, cross_page_store);
   }
 

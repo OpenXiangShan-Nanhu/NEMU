@@ -677,6 +677,7 @@ static void execute(int n) {
 #endif // CONFIG_LIGHTQS_DEBUG
     cpu.amo = false;
     cpu.pbmt = 0;
+    cpu.vaddrMisAlignException = 0;
     fetch_decode(&s, cpu.pc);
     cpu.debug.current_pc = s.pc;
     cpu.pc = s.snpc;
