@@ -211,7 +211,7 @@ void init_pma() {
     // base_addr,       range,             l, c, t, a, x, w, r
     {0x40000000000ULL, 0,                  F, F, F, 1, T, F, T},
     {0x30000000000ULL, 0,                  F, F, F, 0, F, F, F},
-    {0x2000000000ULL,  0,                  F, T, F, 1, T, T, T},
+    {0x2000000000ULL,  0,                  F, T, T, 1, T, T, T},
     {0x80000000ULL,    0,                  F, F, F, 1, T, T, T},
     {0},
     {0},
@@ -671,7 +671,7 @@ static inline word_t* csr_decode(uint32_t addr) {
 
 #define SIE_MASK_BASE (0x222 & mideleg->val)
 #define SIP_MASK ((0x222 | LCOFI) & mideleg->val)
-#define SIP_WMASK_S 0x2
+#define SIP_WMASK_S 0x2002
 #define MTIE_MASK (1 << 7)
 
 // sie
@@ -703,7 +703,6 @@ static inline word_t* csr_decode(uint32_t addr) {
   MUXDEF(CONFIG_RV_SMCSRIND, MSTATEEN0_CSRIND, 0) | \
   MUXDEF(CONFIG_RV_AIA, MSTATEEN0_AIA, 0)         | \
   MUXDEF(CONFIG_RV_IMSIC, MSTATEEN0_IMSIC, 0)     | \
-  MSTATEEN0_HCONTEXT                              | \
   MSTATEEN0_CS                                      \
 )
 #define HSTATEEN0_WMASK MSTATEEN0_WMASK
@@ -1787,7 +1786,7 @@ static word_t csr_read(uint32_t csrid) {
     }
 
 #ifdef CONFIG_RV_SMSTATEEN
-    case CSR_HSTATEEN0 ... CSR_HSTATEEN3:
+    case CSR_HSTATEEN0:
     {
       mstateen1_t *mstateenx = (mstateen1_t *)&csr_array[CSR_MSTATEEN0 + (csrid - CSR_HSTATEEN0)];
       hstateen1_t *hstateenx = (hstateen1_t *)&csr_array[CSR_HSTATEEN0 + (csrid - CSR_HSTATEEN0)];
@@ -2230,7 +2229,7 @@ static void csr_write(uint32_t csrid, word_t src) {
 
 #ifdef CONFIG_RV_SMSTATEEN
     case CSR_HSTATEEN0: *dest = src & HSTATEEN0_WMASK; break;
-    case CSR_HSTATEEN1 ... CSR_HSTATEEN3: *dest = src & HSTATEENX_WMASK; break;
+    // case CSR_HSTATEEN1 ... CSR_HSTATEEN3: *dest = src & HSTATEENX_WMASK; break;
 #endif // CONFIG_RV_SMSTATEEN
 
     case CSR_HGATP:
