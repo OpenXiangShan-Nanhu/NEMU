@@ -723,11 +723,12 @@ void isa_vec_misalign_data_addr_check(vaddr_t vaddr, int len, int type) {
 }
 
 // AMO access currently does not support hardware misalignment.
+// For NanHu, misaligned AMO access will cause store AF or load AF exception.
 void isa_amo_misalign_data_addr_check(vaddr_t vaddr, int len, int type) {
   if (unlikely((vaddr & (len - 1)) != 0)) {
     Logm("addr misaligned happened: vaddr:%lx len:%d type:%d pc:%lx", vaddr, len, type, cpu.pc);
     if (ISDEF(CONFIG_AMO_AC_SOFT)) {
-      int ex = cpu.amo || type == MEM_TYPE_WRITE ? EX_SAM : EX_LAM;
+      int ex = cpu.amo || type == MEM_TYPE_WRITE ? EX_SAF : EX_LAF;
       cpu.trapInfo.tval = vaddr;
       longjmp_exception(ex);
     }
