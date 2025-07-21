@@ -85,7 +85,7 @@ struct lightqs_reg_ss {
   uint64_t gpr[32], fpr[32];
   uint64_t mode;
   uint64_t pc;
-  uint64_t lr_addr, lr_valid;
+  uint64_t lr_addr, lr_valid, lr_width;
   // RAM is store-logged at another position
 
   int ifetch_mmu_state;

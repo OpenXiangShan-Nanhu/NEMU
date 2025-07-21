@@ -84,6 +84,7 @@ def_rtl(amo_slow_path, rtlreg_t *dest, const rtlreg_t *src1, const rtlreg_t *src
     assert(!cpu.amo);
     rtl_lms(s, dest, src1, 0, width, MMU_DYNAMIC);
     cpu.lr_addr = paddr;
+    cpu.lr_width = width;
     cpu.lr_valid = 1;
     Logti("set lr vaild");
     return;
@@ -95,8 +96,9 @@ def_rtl(amo_slow_path, rtlreg_t *dest, const rtlreg_t *src1, const rtlreg_t *src
     cpu.amo = true;
 #endif
     // should check overlapping instead of equality
-    int success = ((cpu.lr_addr ^ paddr) >> CONFIG_RESERVATION_SET_WIDTH == 0) && cpu.lr_valid;
-    Logti("cpu sc addr=%lx scr1=%lx vaild=%ld success=%d", cpu.lr_addr,*src1, cpu.lr_valid,success);
+    // The paddr of sc must be exactly identical to the lr.
+    int success = ((cpu.lr_addr ^ paddr) == 0) && (cpu.lr_width == width) && cpu.lr_valid;
+    Logti("cpu sc addr=%lx scr1=%lx vaild=%ld width=%ld success=%d", cpu.lr_addr,*src1, cpu.lr_valid, cpu.lr_width, success);
     cpu.lr_valid = 0;
     if (success) {
       rtl_sm(s, src2, src1, 0, width, MMU_DYNAMIC);

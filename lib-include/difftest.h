@@ -70,6 +70,7 @@ enum { DIFFTEST_TO_DUT, DIFFTEST_TO_REF };
 struct SyncState {
   uint64_t lrscValid;
   uint64_t lrscAddr;
+  uint64_t lrscWidth;;
 };
 #endif
 

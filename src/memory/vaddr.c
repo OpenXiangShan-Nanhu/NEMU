@@ -284,7 +284,7 @@ void vaddr_write(struct Decode *s, vaddr_t addr, int len, word_t data, int mmu_m
   void isa_misalign_data_addr_check(vaddr_t vaddr, int len, int type);
   isa_misalign_data_addr_check(addr, len, MEM_TYPE_WRITE);
 
-  bool is_cross_page = ((addr & PAGE_MASK) + len) > PAGE_SIZE && len != 1;
+  __attribute__((unused)) bool is_cross_page = ((addr & PAGE_MASK) + len) > PAGE_SIZE && len != 1;
 
   if (unlikely(mmu_mode == MMU_DYNAMIC || mmu_mode == MMU_TRANSLATE)) {
     mmu_mode = isa_mmu_check(addr, len, MEM_TYPE_WRITE);

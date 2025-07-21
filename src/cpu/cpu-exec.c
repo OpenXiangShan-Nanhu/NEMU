@@ -553,6 +553,7 @@ void lightqs_take_reg_snapshot() {
   reg_ss.mode = cpu.mode;
   reg_ss.lr_addr = cpu.lr_addr;
   reg_ss.lr_valid = cpu.lr_valid;
+  reg_ss.lr_width = cpu.lr_width;
   reg_ss.ifetch_mmu_state = ifetch_mmu_state;
   reg_ss.data_mmu_state = data_mmu_state;
 #ifdef CONFIG_RVV
@@ -596,6 +597,7 @@ void lightqs_take_spec_reg_snapshot() {
   spec_reg_ss.mode = cpu.mode;
   spec_reg_ss.lr_addr = cpu.lr_addr;
   spec_reg_ss.lr_valid = cpu.lr_valid;
+  spec_reg_ss.lr_width = cpu.lr_width;
   spec_reg_ss.ifetch_mmu_state = ifetch_mmu_state;
   spec_reg_ss.data_mmu_state = data_mmu_state;
 #ifdef CONFIG_RVV
@@ -646,6 +648,7 @@ uint64_t lightqs_restore_reg_snapshot(uint64_t n) {
   cpu.mode = reg_ss.mode;
   cpu.lr_addr = reg_ss.lr_addr;
   cpu.lr_valid = reg_ss.lr_valid;
+  cpu.lr_width = reg_ss.lr_width;
   ifetch_mmu_state = reg_ss.ifetch_mmu_state;
   data_mmu_state = reg_ss.data_mmu_state;
 #ifdef CONFIG_RVV

@@ -246,6 +246,7 @@ void isa_difftest_uarchstatus_cpy(void *dut, bool direction) {
     struct SyncState ms;
     ms.lrscValid = cpu.lr_valid;
     ms.lrscAddr = cpu.lr_addr;
+    ms.lrscWidth = cpu.lr_width;
     memcpy(dut, &ms, sizeof(struct SyncState));
   }
 

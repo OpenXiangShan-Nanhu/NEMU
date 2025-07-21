@@ -159,6 +159,7 @@ typedef struct {
   // for LR/SC
   uint64_t lr_addr;
   uint64_t lr_valid;
+  uint64_t lr_width;
 
   bool INTR;
   // Guided exec
