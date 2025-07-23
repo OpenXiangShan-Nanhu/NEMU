@@ -209,7 +209,7 @@ void init_pma() {
 #else
   unsigned long long pmaConfigInit[CONFIG_RV_PMA_ACTIVE_NUM][9] = {
     // base_addr,       range,             l, c, t, a, x, w, r
-    {0x40000000000ULL, 0,                  F, F, F, 1, T, F, T},
+    {0x40000000000ULL, 0,                  F, F, F, 1, T, T, T},
     {0x30000000000ULL, 0,                  F, F, F, 0, F, F, F},
     {0x2000000000ULL,  0,                  F, T, T, 1, T, T, T},
     {0x80000000ULL,    0,                  F, F, F, 1, T, T, T},
