@@ -70,6 +70,8 @@ static word_t vaddr_read_cross_page(vaddr_t addr, int len, int type, bool needTr
   return data;
 }
 
+bool is_in_mmio(paddr_t addr);
+
 __attribute__((unused))
 static void vaddr_write_cross_page(vaddr_t addr, int len, word_t data, bool needTranslate) {
   // (unaligned & cross page) store, align with dut(xs)
@@ -143,7 +145,6 @@ static word_t vaddr_mmu_read(struct Decode *s, vaddr_t addr, int len, int type) 
   return 0;
 }
 
-bool is_in_mmio(paddr_t addr);
 
 __attribute__((noinline))
 static void vaddr_mmu_write(struct Decode *s, vaddr_t addr, int len, word_t data) {
