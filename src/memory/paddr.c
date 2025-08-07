@@ -166,7 +166,7 @@ void isa_mmio_misalign_data_addr_check(paddr_t paddr, vaddr_t vaddr, int len, in
       cpu.trapInfo.tval = vaddr;
       cpu.vaddrMisAlignException = ex;
       Logm("raise exception %d for misaligned mmio access", ex);
-      longjmp_exception(ex);
+      // longjmp_exception(ex);
     }
   }
 }
