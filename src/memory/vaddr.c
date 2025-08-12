@@ -295,6 +295,15 @@ void vaddr_write(struct Decode *s, vaddr_t addr, int len, word_t data, int mmu_m
   //   vaddr_write_cross_page(addr, len ,data, mmu_mode == MMU_DYNAMIC || mmu_mode == MMU_TRANSLATE);
   //   return;
   // }
+
+  if(cpu.vaddrMisAlignException == EX_SAM && is_in_mmio(addr)) {
+    longjmp_exception(EX_SAF);
+  }
+
+  if(cpu.vaddrMisAlignException != 0){
+    longjmp_exception(cpu.vaddrMisAlignException);
+  }
+
   if (mmu_mode == MMU_DIRECT) {
 
     paddr_write(addr, len, data, cpu.mode, addr);
