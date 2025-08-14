@@ -304,7 +304,9 @@ void icount_checked_write(trig_icount_t* icount, word_t* wdata) {
 
 bool trigger_reentrancy_check() {
   bool medeleg_bp = BITS(medeleg->val, EX_BP, EX_BP);
+  #ifdef CONFIG_RVH
   bool hedeleg_bp = BITS(hedeleg->val, EX_BP, EX_BP);
+  #endif
   return !(
 #ifdef CONFIG_RVH
     (cpu.mode == MODE_S && cpu.v && medeleg_bp && hedeleg_bp && !vsstatus->sie) ||

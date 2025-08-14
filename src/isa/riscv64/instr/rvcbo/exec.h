@@ -17,46 +17,66 @@
 #include <common.h>
 
 def_EHelper(cbo_zero) {
+  #ifdef CONFIG_RVH
   // check illegal instruction exception
   if((cpu.mode != MODE_M && !menvcfg->cbze) || (!cpu.v && cpu.mode == MODE_U && !senvcfg->cbze)){
     longjmp_exception(EX_II);
   } else if(cpu.v && ((cpu.mode == MODE_S && !henvcfg->cbze) || (cpu.mode == MODE_U && !(henvcfg->cbze && senvcfg->cbze)))){
     longjmp_exception(EX_VI);
   }
-
+  #else
+  if((cpu.mode != MODE_M && !menvcfg->cbze) || (cpu.mode == MODE_U && !senvcfg->cbze)){
+    longjmp_exception(EX_II);
+  }
+  #endif
   cbo_zero(s);
 }
 
 def_EHelper(cbo_inval) {
+  #ifdef CONFIG_RVH
   // check illegal instruction exception
   if((cpu.mode != MODE_M && menvcfg->cbie == 0) || (!cpu.v && cpu.mode == MODE_U && senvcfg->cbie == 0)){
     longjmp_exception(EX_II);
   } else if(cpu.v && ((cpu.mode == MODE_S && henvcfg->cbie == 0) || (cpu.mode == MODE_U && (henvcfg->cbie == 0 || senvcfg->cbie == 0)))){
     longjmp_exception(EX_VI);
   }
-
+  #else
+  if((cpu.mode != MODE_M && menvcfg->cbie == 0) || (cpu.mode == MODE_U && senvcfg->cbie == 0)){
+    longjmp_exception(EX_II);
+  }
+  #endif
   cbo_inval(s);
 }
 
 def_EHelper(cbo_flush) {
+  #ifdef CONFIG_RVH
   // check illegal instruction exception
   if((cpu.mode != MODE_M && !menvcfg->cbcfe) || (!cpu.v && cpu.mode == MODE_U && !senvcfg->cbcfe)){
     longjmp_exception(EX_II);
   } else if(cpu.v && ((cpu.mode == MODE_S && !henvcfg->cbcfe) || (cpu.mode == MODE_U && !(henvcfg->cbcfe && senvcfg->cbcfe)))){
     longjmp_exception(EX_VI);
   }
-
+  #else
+  if((cpu.mode != MODE_M && !menvcfg->cbcfe) || (cpu.mode == MODE_U && !senvcfg->cbcfe)){
+    longjmp_exception(EX_II);
+  }
+  #endif
   cbo_flush(s);
 }
 
 def_EHelper(cbo_clean) {
+  #ifdef CONFIG_RVH
   // check illegal instruction exception
   if((cpu.mode != MODE_M && !menvcfg->cbcfe) || (!cpu.v && cpu.mode == MODE_U && !senvcfg->cbcfe)){
     longjmp_exception(EX_II);
   } else if(cpu.v && ((cpu.mode == MODE_S && !henvcfg->cbcfe) || (cpu.mode == MODE_U && !(henvcfg->cbcfe && senvcfg->cbcfe)))){
     longjmp_exception(EX_VI);
   }
-
+  #else
+  if((cpu.mode != MODE_M && !menvcfg->cbcfe) || (cpu.mode == MODE_U && !senvcfg->cbcfe)){
+    longjmp_exception(EX_II);
+  }
+  #endif
   cbo_clean(s);
 }
 
@@ -65,45 +85,65 @@ def_EHelper(cbo_clean) {
  */
 
 def_EHelper(cbo_zero_mmu) {
+  #ifdef CONFIG_RVH
   // check illegal instruction exception
   if((cpu.mode != MODE_M && !menvcfg->cbze) || (!cpu.v && cpu.mode == MODE_U && !senvcfg->cbze)){
     longjmp_exception(EX_II);
   } else if(cpu.v && ((cpu.mode == MODE_S && !henvcfg->cbze) || (cpu.mode == MODE_U && !(henvcfg->cbze && senvcfg->cbze)))){
     longjmp_exception(EX_VI);
   }
-
+  #else
+  if((cpu.mode != MODE_M && !menvcfg->cbze) || (cpu.mode == MODE_U && !senvcfg->cbze)){
+    longjmp_exception(EX_II);
+  }
+  #endif
   cbo_zero_mmu(s);
 }
 
 def_EHelper(cbo_inval_mmu) {
+  #ifdef CONFIG_RVH
   // check illegal instruction exception
   if((cpu.mode != MODE_M && menvcfg->cbie == 0) || (!cpu.v && cpu.mode == MODE_U && senvcfg->cbie == 0)){
     longjmp_exception(EX_II);
   } else if(cpu.v && ((cpu.mode == MODE_S && henvcfg->cbie == 0) || (cpu.mode == MODE_U && (henvcfg->cbie == 0 || senvcfg->cbie == 0)))){
     longjmp_exception(EX_VI);
   }
-
+  #else
+  if((cpu.mode != MODE_M && menvcfg->cbie == 0) || (cpu.mode == MODE_U && senvcfg->cbie == 0)){
+    longjmp_exception(EX_II);
+  }
+  #endif
   cbo_inval_mmu(s);
 }
 
 def_EHelper(cbo_flush_mmu) {
+  #ifdef CONFIG_RVH
   // check illegal instruction exception
   if((cpu.mode != MODE_M && !menvcfg->cbcfe) || (!cpu.v && cpu.mode == MODE_U && !senvcfg->cbcfe)){
     longjmp_exception(EX_II);
   } else if(cpu.v && ((cpu.mode == MODE_S && !henvcfg->cbcfe) || (cpu.mode == MODE_U && !(henvcfg->cbcfe && senvcfg->cbcfe)))){
     longjmp_exception(EX_VI);
   }
-
+  #else
+  if((cpu.mode != MODE_M && !menvcfg->cbcfe) || (cpu.mode == MODE_U && !senvcfg->cbcfe)){
+    longjmp_exception(EX_II);
+  }
+  #endif
   cbo_flush_mmu(s);
 }
 
 def_EHelper(cbo_clean_mmu) {
+  #ifdef CONFIG_RVH
   // check illegal instruction exception
   if((cpu.mode != MODE_M && !menvcfg->cbcfe) || (!cpu.v && cpu.mode == MODE_U && !senvcfg->cbcfe)){
     longjmp_exception(EX_II);
   } else if(cpu.v && ((cpu.mode == MODE_S && !henvcfg->cbcfe) || (cpu.mode == MODE_U && !(henvcfg->cbcfe && senvcfg->cbcfe)))){
     longjmp_exception(EX_VI);
   }
-
+  #else
+  if((cpu.mode != MODE_M && !menvcfg->cbcfe) || (cpu.mode == MODE_U && !senvcfg->cbcfe)){
+    longjmp_exception(EX_II);
+  }
+  #endif
   cbo_clean_mmu(s);
 }

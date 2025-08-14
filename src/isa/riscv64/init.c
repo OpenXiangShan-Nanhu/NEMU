@@ -79,7 +79,9 @@ void init_isa() {
   // software write envcfg to open ssdbltrp if need
   // set 0 to pass ci
   menvcfg->dte = 0;
+  #ifdef CONFIG_RH
   henvcfg->dte = 0;
+  #endif
 #endif //CONFIG_RV_SSDBLTRP
 #ifdef CONFIG_RV_SMRNMI
 // as opensbi and linux not support smrnmi, so we default init nmie = 1 to pass ci
@@ -97,7 +99,9 @@ void init_isa() {
 
 #ifdef CONFIG_RV_SVPBMT
   menvcfg->pbmte = 0;
+  #ifdef CONFIG_RH
   henvcfg->pbmte = 0;
+  #endif
 #endif //CONFIG_RV_SVPBMT
 
 #ifdef CONFIG_RV_CBO

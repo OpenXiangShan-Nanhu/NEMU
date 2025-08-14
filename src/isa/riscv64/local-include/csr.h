@@ -1204,10 +1204,6 @@ CSR_STRUCT_START(spfctl)
   uint64_t l1d_pf_active_stride     : 6; // [15:10] L1D prefetch active page stride
   uint64_t l1d_pf_enable_stride     : 1; // [16] L1D prefetch enable stride
   uint64_t l2_pf_store_only         : 1; // [17] L2 pf store only
-  uint64_t l2_pf_recv_enable        : 1; // [18] (Train L1, Prefetch L2) receive from sms
-  uint64_t l2_pf_pbop_enable        : 1; // [19] (Train L1, Prefetch L2) PBOP
-  uint64_t l2_pf_vbop_enable        : 1; // [20] (Train L1, Prefetch L2) VBOP
-  uint64_t l2_pf_tp_enable          : 1; // [21] (Train L1, Prefetch L2) TP
 CSR_STRUCT_END(spfctl)
 
 CSR_STRUCT_START(slvpredctl)
