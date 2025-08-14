@@ -1729,7 +1729,7 @@ static word_t csr_read(uint32_t csrid) {
     case CSR_SCOUNTOVF:
       if (cpu.mode == MODE_M) return scountovf->val;
       #ifdef CONFIG_RVH
-      else if (cpu.v && cpu.mode == MODE_S) return (mcounteren->val & hcounteren->val & scountovf->val)
+      else if (cpu.v && cpu.mode == MODE_S) return (mcounteren->val & hcounteren->val & scountovf->val);
       else if (cpu.mode == MODE_S) return (mcounteren->val & scountovf->val);
       #else
       else if (cpu.mode == MODE_S) return (mcounteren->val & scountovf->val);
