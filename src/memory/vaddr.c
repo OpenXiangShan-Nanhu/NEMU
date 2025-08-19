@@ -129,18 +129,25 @@ static word_t vaddr_mmu_read(struct Decode *s, vaddr_t addr, int len, int type) 
   int ret = pg_base & PAGE_MASK;
   if (ret == MEM_RET_OK) {
     addr = pg_base | (addr & PAGE_MASK);
+    if(is_in_mmio(addr) && cpu.vaddrMisAlignException == EX_LAM){
+      longjmp_exception(EX_LAF);
+    } else if(cpu.vaddrMisAlignException != 0){
+      longjmp_exception(cpu.vaddrMisAlignException);
+    } else {
 #ifdef CONFIG_MULTICORE_DIFF
-    word_t rdata = (type == MEM_TYPE_IFETCH ? golden_pmem_read(addr, len) : paddr_read(addr, len, type, type, cpu.mode, vaddr));
+      word_t rdata = (type == MEM_TYPE_IFETCH ? golden_pmem_read(addr, len) : paddr_read(addr, len, type, type, cpu.mode, vaddr));
 #else
-    word_t rdata = paddr_read(addr, len, type, type, cpu.mode, vaddr);
+      word_t rdata = paddr_read(addr, len, type, type, cpu.mode, vaddr);
 #endif // CONFIG_MULTICORE_DIFF
 #ifdef CONFIG_SHARE
-    if (unlikely(dynamic_config.debug_difftest)) {
-      fprintf(stderr, "[NEMU] mmu_read: vaddr 0x%lx, paddr 0x%lx, rdata 0x%lx\n",
-        vaddr, addr, rdata);
-    }
+      if (unlikely(dynamic_config.debug_difftest)) {
+        fprintf(stderr, "[NEMU] mmu_read: vaddr 0x%lx, paddr 0x%lx, rdata 0x%lx\n",
+          vaddr, addr, rdata);
+      }
 #endif // CONFIG_SHARE
-    return rdata;
+      return rdata;
+    }
+    return 0;
   }
   return 0;
 }
@@ -161,15 +168,14 @@ static void vaddr_mmu_write(struct Decode *s, vaddr_t addr, int len, word_t data
 #endif // CONFIG_SHARE
 
     if(is_in_mmio(addr) && cpu.vaddrMisAlignException == EX_SAM){
-      Logti("this is mmio paddr:" FMT_PADDR " vaddr:" FMT_WORD " len:%d type:%d pc:%lx cpu.vaddrMisAlignException : %d", addr, vaddr, len, MEM_TYPE_WRITE, cpu.pc, cpu.vaddrMisAlignException);
-      
       longjmp_exception(EX_SAF);
-    }
-    if(cpu.vaddrMisAlignException != 0){
+    } else if(cpu.vaddrMisAlignException != 0){
       longjmp_exception(cpu.vaddrMisAlignException);
+    } else {
+      paddr_write(addr, len, data, cpu.mode, vaddr);
     }
-    paddr_write(addr, len, data, cpu.mode, vaddr);
   }
+  return;
 }
 
 #endif // ENABLE_HOSTTLB
@@ -206,24 +212,20 @@ static inline word_t vaddr_read_internal(void *s, vaddr_t addr, int len, int typ
   //   res = vaddr_read_cross_page(addr, len, type, mmu_mode == MMU_DYNAMIC || mmu_mode == MMU_TRANSLATE);
   // }
 
-
-  if(cpu.vaddrMisAlignException == EX_LAM && type != MEM_TYPE_IFETCH && is_in_mmio(addr)) {
-    Logti("this is mmio paddr:" FMT_PADDR " vaddr:" FMT_WORD " len:%d type:%d pc:%lx", addr, addr, len, type, cpu.pc);
-    longjmp_exception(EX_LAF);
-  }
-
-  if(cpu.vaddrMisAlignException != 0){
-    longjmp_exception(cpu.vaddrMisAlignException);
-  }
-
-
   if (mmu_mode == MMU_DIRECT) {
     Logti("Paddr reading directly");
-    res = paddr_read(addr, len, type, type, cpu.mode, addr);
-    return res;
+    
+    if(cpu.vaddrMisAlignException == EX_LAM && type != MEM_TYPE_IFETCH && is_in_mmio(addr)) {
+      longjmp_exception(EX_LAF);
+    } else if(cpu.vaddrMisAlignException != 0){
+      longjmp_exception(cpu.vaddrMisAlignException);
+    } else {
+      res = paddr_read(addr, len, type, type, cpu.mode, addr);
+      return res;
+    }
+    return 0;
   }
   res = MUXDEF(ENABLE_HOSTTLB, hosttlb_read, vaddr_mmu_read) ((struct Decode *)s, addr, len, type);
-
   return res;
   // return 0;
 
@@ -296,17 +298,14 @@ void vaddr_write(struct Decode *s, vaddr_t addr, int len, word_t data, int mmu_m
   //   return;
   // }
 
-  if(cpu.vaddrMisAlignException == EX_SAM && is_in_mmio(addr)) {
-    longjmp_exception(EX_SAF);
-  }
-
-  if(cpu.vaddrMisAlignException != 0){
-    longjmp_exception(cpu.vaddrMisAlignException);
-  }
-
   if (mmu_mode == MMU_DIRECT) {
-
-    paddr_write(addr, len, data, cpu.mode, addr);
+    if(cpu.vaddrMisAlignException == EX_SAM && is_in_mmio(addr)) {
+      longjmp_exception(EX_SAF);
+    } else if(cpu.vaddrMisAlignException != 0){
+      longjmp_exception(cpu.vaddrMisAlignException);
+    } else {
+      paddr_write(addr, len, data, cpu.mode, addr);
+    }
     return;
   }
   MUXDEF(ENABLE_HOSTTLB, hosttlb_write, vaddr_mmu_write) (s, addr, len, data);
