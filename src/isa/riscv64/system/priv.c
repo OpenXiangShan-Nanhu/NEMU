@@ -155,11 +155,13 @@ void init_custom_csr() {
   spfctl->l1d_pf_enable_stride = 1;
   spfctl->l2_pf_store_only = 0;
 
-  slvpredctl->lvpred_disable = 0;
-  slvpredctl->no_spec_load = 0;
-  slvpredctl->storeset_wait_store = 0;
-  slvpredctl->storeset_no_fast_wakeup = 0;
-  slvpredctl->lvpred_timeout = 3;
+  // slvpredctl->lvpred_disable = 0;
+  // slvpredctl->no_spec_load = 0;
+  // slvpredctl->storeset_wait_store = 0;
+  // slvpredctl->storeset_no_fast_wakeup = 0;
+  // slvpredctl->lvpred_timeout = 3;
+
+  sfetchctl->icache_parity_enable = 0;
 
   smblockctl->sbuffer_threshold = 7;
   smblockctl->ldld_vio_check_enable = 1;
@@ -2138,6 +2140,7 @@ static void csr_write(uint32_t csrid, word_t src) {
     case CUSTOM_CSR_SPFCTL: *dest = src & CUSTOM_CSR_SPFCTL_WMASK; break;
     // case CUSTOM_CSR_SLVPREDCTL: *dest = src & CUSTOM_CSR_SLVPREDCTL_WMASK; break;
     case CUSTOM_CSR_SMBLOCKCTL: *dest = src & CUSTOM_CSR_SMBLOCKCTL_WMASK; break;
+    case CUSTOM_CSR_SFETCHCTL: *dest = src & CUSTOM_CSR_SFETCHCTL_WMASK; break;
     IFDEF(CONFIG_RV_SVINVAL, case CUSTOM_CSR_SRNCTL: *dest = src & CUSTOM_CSR_SRNCTL_WMASK; break;)
 
 #ifdef CONFIG_RV_IMSIC

@@ -30,20 +30,22 @@
 
 #define CUSTOM_CSR_SBPCTL     0x5c0
 #define CUSTOM_CSR_SPFCTL     0x5c1
-#define CUSTOM_CSR_SLVPREDCTL 0x5c2
+// #define CUSTOM_CSR_SLVPREDCTL 0x5c2
 #define CUSTOM_CSR_SMBLOCKCTL 0x5c3
 #define CUSTOM_CSR_SRNCTL     0x5c4
 #define CUSTOM_CSR_MCOREPWR   0xbc0
 #define CUSTOM_CSR_MFLUSHPWR  0xbc1
 #define CUSTOM_CSR_MBMC       0xbC2
+#define CUSTOM_CSR_SFETCHCTL  0x9e0
 
 #define CUSTOM_CSR_SBPCTL_WMASK     0x7f
 #define CUSTOM_CSR_SPFCTL_WMASK     0x3fffff
-#define CUSTOM_CSR_SLVPREDCTL_WMASK 0x1ff
+// #define CUSTOM_CSR_SLVPREDCTL_WMASK 0x1ff
 #define CUSTOM_CSR_SMBLOCKCTL_WMASK 0x77
 #define CUSTOM_CSR_SRNCTL_WMASK     0x5
 #define CUSTOM_CSR_MCOREPWR_WMASK   0x1
 #define CUSTOM_CSR_MFLUSHPWR_WMASK  0x1
+#define CUSTOM_CSR_SFETCHCTL_WMASK  0x1
 
 /**
  * Mapping between CSR name and addr
@@ -185,8 +187,9 @@
   CSRS_S_XIANGSHAN_SRNCTL(f) \
   f(sbpctl  ,   0x5c0) \
   f(spfctl  ,   0x5c1) \
-  f(slvpredctl, 0x5c2) \
-  f(smblockctl, 0x5c3)
+  f(smblockctl, 0x5c3) \
+  f(sfetchctl,  0x9e0)
+  // f(slvpredctl, 0x5c2)
 
 #define CSRS_S_CUSTOM_1(f) \
   CSRS_S_XIANGSHAN_CTRL(f)
@@ -1206,13 +1209,16 @@ CSR_STRUCT_START(spfctl)
   uint64_t l2_pf_store_only         : 1; // [17] L2 pf store only
 CSR_STRUCT_END(spfctl)
 
-CSR_STRUCT_START(slvpredctl)
-  uint64_t lvpred_disable           : 1; // [0]
-  uint64_t no_spec_load             : 1; // [1]
-  uint64_t storeset_wait_store      : 1; // [2]
-  uint64_t storeset_no_fast_wakeup  : 1; // [3]
-  uint64_t lvpred_timeout           : 5; // [8:4]
-CSR_STRUCT_END(slvpredctl)
+// CSR_STRUCT_START(slvpredctl)
+//   uint64_t lvpred_disable           : 1; // [0]
+//   uint64_t no_spec_load             : 1; // [1]
+//   uint64_t storeset_wait_store      : 1; // [2]
+//   uint64_t storeset_no_fast_wakeup  : 1; // [3]
+//   uint64_t lvpred_timeout           : 5; // [8:4]
+// CSR_STRUCT_END(slvpredctl)
+CSR_STRUCT_START(sfetchctl)
+  uint64_t icache_parity_enable   : 1;  // [0]
+CSR_STRUCT_END(sfetchctl)
 
 CSR_STRUCT_START(smblockctl)
   uint64_t sbuffer_threshold                : 4; // [3:0] Store buffer flush threshold (Th).
