@@ -265,9 +265,11 @@ word_t paddr_read(paddr_t addr, int len, int type, int trap_type, int mode, vadd
   mode &= ~CROSS_PAGE_LD_FLAG;
 
   assert(type == MEM_TYPE_READ || type == MEM_TYPE_IFETCH_READ || type == MEM_TYPE_IFETCH || type == MEM_TYPE_WRITE_READ);
-  if (cpu.pbmt != PBMT_PMA || cpu.pbmt != PBMT_NC) {
-    isa_mmio_misalign_data_addr_check(addr, vaddr, len, MEM_TYPE_READ, cross_page_load);
-  }
+  // Logtr("cpu.pbmt: %d, paddr: 0x%lx, vaddr: 0x%lx, len: %d, type: %d, mode: %d, pc: 0x%lx", cpu.pbmt, addr, vaddr, len, type, mode, cpu.pc);
+  // if (cpu.pbmt == PBMT_IO || is_in_mmio(addr)) {
+  //   Logtr("MMIO misaligned access: paddr: 0x%lx, vaddr: 0x%lx, len: %d, type: %d, pc: 0x%lx", addr, vaddr, len, type, cpu.pc);
+  //   isa_mmio_misalign_data_addr_check(addr, vaddr, len, MEM_TYPE_READ, cross_page_load);
+  // }
 
   if (!check_paddr(addr, len, type, trap_type, mode, vaddr)) {
     return 0;

@@ -168,6 +168,8 @@ static void vaddr_mmu_write(struct Decode *s, vaddr_t addr, int len, word_t data
 #endif // CONFIG_SHARE
 
     if(is_in_mmio(addr) && cpu.vaddrMisAlignException == EX_SAM){
+      Logti("this is mmio paddr:" FMT_PADDR " vaddr:" FMT_WORD " len:%d type:%d pc:%lx cpu.vaddrMisAlignException : %d", addr, vaddr, len, MEM_TYPE_WRITE, cpu.pc, cpu.vaddrMisAlignException);
+      
       longjmp_exception(EX_SAF);
     } else if(cpu.vaddrMisAlignException != 0){
       longjmp_exception(cpu.vaddrMisAlignException);
@@ -214,7 +216,7 @@ static inline word_t vaddr_read_internal(void *s, vaddr_t addr, int len, int typ
 
   if (mmu_mode == MMU_DIRECT) {
     Logti("Paddr reading directly");
-    
+
     if(cpu.vaddrMisAlignException == EX_LAM && type != MEM_TYPE_IFETCH && is_in_mmio(addr)) {
       longjmp_exception(EX_LAF);
     } else if(cpu.vaddrMisAlignException != 0){
