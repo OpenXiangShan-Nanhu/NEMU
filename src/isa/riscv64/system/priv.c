@@ -1838,8 +1838,7 @@ static word_t csr_read(uint32_t csrid) {
 
     case CSR_MIP:
 #ifndef CONFIG_RVH
-        difftest_skip_ref();
-        return mip->val;
+        return get_mip();
 #else
         return get_mip();
 #endif
