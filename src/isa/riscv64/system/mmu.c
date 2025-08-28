@@ -134,7 +134,11 @@ static inline bool check_permission(PTE *pte, bool ok, vaddr_t vaddr, int type) 
       cpu.trapInfo.tval = vaddr;
       cpu.amo = false;
       Logtr("Memory read translation exception!");
-      longjmp_exception(ex);
+      if(cpu.vaddrMisAlignException != 0){
+        longjmp_exception(cpu.vaddrMisAlignException);
+      } else {
+        longjmp_exception(ex);
+      }
       return false;
     }
   } else { // MEM_TYPE_WRITE
@@ -148,7 +152,12 @@ static inline bool check_permission(PTE *pte, bool ok, vaddr_t vaddr, int type) 
     if (!(ok && pte->w && !pte->pad) || update_ad) {
       cpu.trapInfo.tval = vaddr;
       cpu.amo = false;
-      longjmp_exception(EX_SPF);
+
+      if(cpu.vaddrMisAlignException != 0){
+        longjmp_exception(cpu.vaddrMisAlignException);
+      } else {
+        longjmp_exception(EX_SPF);
+      }
       return false;
     }
   }
