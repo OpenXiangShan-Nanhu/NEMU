@@ -681,7 +681,12 @@ int isa_mmu_check(vaddr_t vaddr, int len, int type) {
       longjmp_exception(ex);
 #else
       int ex = cpu.amo ? EX_SPF : EX_LPF;
-      longjmp_exception(ex);
+      if(cpu.vaddrMisAlignException != 0) {
+        longjmp_exception(cpu.vaddrMisAlignException);
+      } else{
+        longjmp_exception(ex);
+      }
+
 #endif
     } else {
       cpu.trapInfo.tval = vaddr;
@@ -693,7 +698,11 @@ int isa_mmu_check(vaddr_t vaddr, int len, int type) {
         longjmp_exception(EX_SPF);
       }
 #else
+    if(cpu.vaddrMisAlignException != 0){
+      longjmp_exception(cpu.vaddrMisAlignException);
+    } else {
       longjmp_exception(EX_SPF);
+    }
 #endif
     }
     return MEM_RET_FAIL;
