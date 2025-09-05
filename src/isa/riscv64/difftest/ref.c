@@ -421,6 +421,10 @@ void isa_update_mip(unsigned lcofip) {
   mip->lcofip = lcofip;
 }
 
+void isa_update_get_mip() {
+  get_mip();
+}
+
 void isa_update_mhpmcounter_overflow(uint64_t mhpmeventOverflowVec) {
 #ifdef CONFIG_RV_SSCOFPMF
   scountovf_t* scountovf = (scountovf_t*)&csr_array[CSR_SCOUNTOVF];

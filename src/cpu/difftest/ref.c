@@ -259,6 +259,7 @@ void difftest_raise_mhpmevent_overflow(uint64_t mhpmeventOverflowVec) {
 void difftest_non_reg_interrupt_pending(void *nonRegInterruptPending) {
   memcpy(&cpu.non_reg_interrupt_pending, nonRegInterruptPending, sizeof(struct NonRegInterruptPending));
   isa_update_mip(cpu.non_reg_interrupt_pending.lcofi_req);
+  isa_update_get_mip();
 #ifdef CONFIG_RV_IMSIC
   if (cpu.non_reg_interrupt_pending.platform_irp_meip || cpu.non_reg_interrupt_pending.from_aia_meip ||
       cpu.non_reg_interrupt_pending.platform_irp_seip || cpu.non_reg_interrupt_pending.from_aia_seip) {

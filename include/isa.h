@@ -97,6 +97,7 @@ void isa_difftest_query_ref(void *result_buffer, uint64_t type);
 void isa_difftest_set_mhartid(int n);
 #endif
 void isa_update_mip(unsigned lcofip);
+void isa_update_get_mip();
 void isa_update_mhpmcounter_overflow(uint64_t mhpmeventOverflowVec);
 #ifdef CONFIG_RV_IMSIC
 void isa_update_mtopi();
