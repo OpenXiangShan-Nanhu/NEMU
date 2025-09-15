@@ -27,6 +27,7 @@
 #include <math.h>
 #ifdef CONFIG_SHARE
 static int stip_priv = 0;
+static int seip_priv = 0;
 #endif
 int update_mmu_state();
 uint64_t get_htime();
@@ -1179,7 +1180,11 @@ inline word_t get_mip() {
     tmp |= (mvip->seip | cpu.non_reg_interrupt_pending.platform_irp_seip | cpu.non_reg_interrupt_pending.from_aia_seip) << 9;
   }
 #else
-  tmp |= (cpu.non_reg_interrupt_pending.platform_irp_seip | cpu.non_reg_interrupt_pending.from_aia_seip) << 9;
+  if (cpu.non_reg_interrupt_pending.platform_irp_seip | cpu.non_reg_interrupt_pending.from_aia_seip) {
+    tmp |= (cpu.non_reg_interrupt_pending.platform_irp_seip | cpu.non_reg_interrupt_pending.from_aia_seip) << 9;
+  } else {
+    tmp |= seip_priv << 9;
+  }
 #endif // CONFIG_RV_AIA
 
   IFDEF(CONFIG_RVH, tmp |= (hvip->vseip | cpu.non_reg_interrupt_pending.platform_irp_vseip) << 10);
@@ -1208,6 +1213,7 @@ static inline void set_mip(word_t src) {
   mvip->val = mask_bitset(mvip->val, MIP_SEIP & (~mvien->val), src);
 #else
   mip->val = mask_bitset(mip->val, MIP_SEIP, src);
+  seip_priv = mip->seip;
 #endif // CONFIG_RV_AIA
 }
 
