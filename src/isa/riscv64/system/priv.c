@@ -27,8 +27,9 @@
 #include <math.h>
 #ifdef CONFIG_SHARE
 static int stip_priv = 0;
-static int seip_priv = 0;
 #endif
+static int seip_priv = 0;
+
 int update_mmu_state();
 uint64_t get_htime();
 uint64_t get_mtime();
