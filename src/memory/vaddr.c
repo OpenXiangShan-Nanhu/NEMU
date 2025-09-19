@@ -129,7 +129,9 @@ static word_t vaddr_mmu_read(struct Decode *s, vaddr_t addr, int len, int type) 
   int ret = pg_base & PAGE_MASK;
   if (ret == MEM_RET_OK) {
     addr = pg_base | (addr & PAGE_MASK);
-    if(is_in_mmio(addr) && cpu.vaddrMisAlignException == EX_LAM){
+    bool isDevice = (is_in_mmio(addr) && cpu.pbmt != PBMT_NC) || cpu.pbmt == PBMT_IO;
+    Logm("is device = %d, cpu.pbmt = %d",isDevice,cpu.pbmt);
+    if(isDevice && cpu.vaddrMisAlignException == EX_LAM){
       longjmp_exception(EX_LAF);
     } else if(cpu.vaddrMisAlignException != 0){
       longjmp_exception(cpu.vaddrMisAlignException);
@@ -167,7 +169,8 @@ static void vaddr_mmu_write(struct Decode *s, vaddr_t addr, int len, word_t data
     }
 #endif // CONFIG_SHARE
 
-    if(is_in_mmio(addr) && cpu.vaddrMisAlignException == EX_SAM){
+    bool isDevice = (is_in_mmio(addr) && cpu.pbmt != PBMT_NC) || cpu.pbmt == PBMT_IO;
+    if(isDevice && cpu.vaddrMisAlignException == EX_SAM){
       Logti("this is mmio paddr:" FMT_PADDR " vaddr:" FMT_WORD " len:%d type:%d pc:%lx cpu.vaddrMisAlignException : %d", addr, vaddr, len, MEM_TYPE_WRITE, cpu.pc, cpu.vaddrMisAlignException);
       
       longjmp_exception(EX_SAF);
@@ -216,8 +219,9 @@ static inline word_t vaddr_read_internal(void *s, vaddr_t addr, int len, int typ
 
   if (mmu_mode == MMU_DIRECT) {
     Logti("Paddr reading directly");
-
-    if(cpu.vaddrMisAlignException == EX_LAM && type != MEM_TYPE_IFETCH && is_in_mmio(addr)) {
+    bool isDevice = (is_in_mmio(addr) && cpu.pbmt != PBMT_NC) || cpu.pbmt == PBMT_IO;
+    Logm("is device = %d, cpu.pbmt = %d",isDevice,cpu.pbmt);
+    if(cpu.vaddrMisAlignException == EX_LAM && type != MEM_TYPE_IFETCH && isDevice) {
       longjmp_exception(EX_LAF);
     } else if(cpu.vaddrMisAlignException != 0){
       longjmp_exception(cpu.vaddrMisAlignException);
@@ -301,7 +305,8 @@ void vaddr_write(struct Decode *s, vaddr_t addr, int len, word_t data, int mmu_m
   // }
 
   if (mmu_mode == MMU_DIRECT) {
-    if(cpu.vaddrMisAlignException == EX_SAM && is_in_mmio(addr)) {
+    bool isDevice = (is_in_mmio(addr) && cpu.pbmt != PBMT_NC) || cpu.pbmt == PBMT_IO;
+    if(cpu.vaddrMisAlignException == EX_SAM && isDevice) {
       longjmp_exception(EX_SAF);
     } else if(cpu.vaddrMisAlignException != 0){
       longjmp_exception(cpu.vaddrMisAlignException);
