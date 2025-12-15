@@ -188,22 +188,23 @@ uint32_t vf_allowed_e8[] = {
   FNCVT_RTZ_XUF,
   FNCVT_RTZ_XF,
 };
-#endif
 
-static bool is_vf_allowed_e16(uint32_t opcode) {
-  int len = sizeof(vf_allowed_e16) / sizeof(vf_allowed_e16[0]);
+static bool is_vf_allowed_e8(uint32_t opcode) {
+  int len = sizeof(vf_allowed_e8) / sizeof(vf_allowed_e8[0]);
   for (int i = 0; i < len; i++) {
-    if (vf_allowed_e16[i] == opcode) {
+    if (vf_allowed_e8[i] == opcode) {
       return true;
     }
   }
   return false;
 }
 
-static bool is_vf_allowed_e8(uint32_t opcode) {
-  int len = sizeof(vf_allowed_e8) / sizeof(vf_allowed_e8[0]);
+#endif
+
+static bool is_vf_allowed_e16(uint32_t opcode) {
+  int len = sizeof(vf_allowed_e16) / sizeof(vf_allowed_e16[0]);
   for (int i = 0; i < len; i++) {
-    if (vf_allowed_e8[i] == opcode) {
+    if (vf_allowed_e16[i] == opcode) {
       return true;
     }
   }
