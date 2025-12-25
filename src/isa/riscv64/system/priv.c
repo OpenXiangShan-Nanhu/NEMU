@@ -26,8 +26,10 @@
 #include <stdlib.h>
 #include <math.h>
 #ifdef CONFIG_SHARE
+#ifdef CONFIG_RV_SSTC
 static int stip_priv = 0;
-#endif
+#endif // CONFIG_RV_SSTC
+#endif // CONFIG_SHARE
 static int seip_priv = 0;
 
 int update_mmu_state();
